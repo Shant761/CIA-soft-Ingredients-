@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ԽՈՀԱՆՈՑԻ ԵՎ ԲԱՐԻ ՊԱՇԱՐՆԵՐԻ ՀԱՇՎԱՌՈՒՄ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root{
+--primary-color:#6b8e23;
+--secondary-color:#8a2be2;
+--accent-color:#25D366;
+--light-bg:#f9f9f9;
+--card-bg:#ffffff;
+--text-color:#333333;
+--border-radius:10px;
+--box-shadow:0 4px 6px rgba(0,0,0,0.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
+body{background-color:var(--light-bg);color:var(--text-color);line-height:1.6;padding:10px;}
+header{text-align:center;margin-bottom:20px;padding:20px;background:linear-gradient(135deg,var(--primary-color)0%,var(--secondary-color)100%);color:white;border-radius:var(--border-radius);box-shadow:var(--box-shadow);}
+h1{margin-bottom:10px;font-size:1.8rem;}
+.establishment-name{font-size:1rem;margin-top:10px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;}
+.establishment-name input{padding:6px 10px;border:none;border-radius:15px;font-size:0.9rem;text-align:center;max-width:250px;}
+.container{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;}
+@media(max-width:600px){.container{grid-template-columns:1fr;}}
+.card{background-color:var(--card-bg);padding:15px;border-radius:var(--border-radius);box-shadow:var(--box-shadow);}
+.form-group{margin-bottom:15px;}
+label{display:block;margin-bottom:5px;font-weight:bold;}
+select,input{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
+button{padding:10px 15px;background-color:var(--primary-color);color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;margin-right:5px;margin-top:5px;transition:all 0.3s ease;}
+button:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-primary{background-color:var(--primary-color);}
+.btn-secondary{background-color:var(--secondary-color);}
+.btn-accent{background-color:var(--accent-color);}
+.btn-danger{background-color:#ff4d4d;}
+.export-buttons{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #ddd;}
+th{background-color:#f2f2f2;font-weight:bold;}
+tr:hover{background-color:#f5f5f5;}
+.category-header{background-color:var(--primary-color);color:white;font-size:1rem;padding:5px;margin-top:15px;border-radius:5px;}
+.empty-list{text-align:center;padding:20px;color:#777;font-style:italic;}
+.action-buttons{display:flex;gap:5px;}
+.action-btn{padding:4px 8px;font-size:12px;}
+footer{text-align:center;margin-top:20px;padding:10px;color:#777;}
+.notification{position:fixed;top:10px;right:10px;padding:10px 15px;background-color:var(--primary-color);color:white;border-radius:5px;box-shadow:var(--box-shadow);transform:translateX(100vw);transition:transform 0.3s ease;z-index:1000;}
+.notification.show{transform:translateX(0);}
+</style>
+</head>
+<body>
+
+<header>
+<h1>ԽՈՀԱՆՈՑԻ ԵՎ ԲԱՐԻ ՊԱՇԱՐՆԵՐԻ ՀԱՇՎԱՌՈՒՄ</h1>
+<p>Ավելացրեք և կառավարեք ձեր բաղադրիչները</p>
+<div class="establishment-name">
+<span>Կազմակերպության անվանումը:</span>
+<input type="text" id="establishment" placeholder="Մուտքագրեք անվանումը">
+</div>
+</header>
+
+<div class="container">
+<div class="card">
+<h2>Ավելացնել բաղադրիչ</h2>
+<div class="form-group">
+<label for="category">Կատեգորիա:</label>
+<select id="category">
+<option value="միս">Միս</option>
+<option value="ծովամթերք">Ծովամթերք</option>
+<option value="կիսաֆաբրիկատներ">Կիսաֆաբրիկատներ</option>
+<option value="բանջարեղեն/կանաչի">Բանջարեղեն/Կանաչի</option>
+<option value="կաթնամթերք/պանիր">Կաթնամթերք/Պանիր</option>
+<option value="սոուսներ">Սոուսներ</option>
+<option value="համեմունքներ">Համեմունքներ</option>
+<option value="կռուպեղեն">Կռուպեղեն</option>
+<option value="հացաբուլկեղեն">Հացաբուլկեղեն</option>
+<option value="տուփեր/սուոսնիկներ">Տուփեր/Սուոսնիկներ</option>
+</select>
+</div>
+<div class="form-group">
+<label for="ingredient">Բաղադրիչի անվանում:</label>
+<input type="text" id="ingredient" placeholder="Մուտքագրեք բաղադրիչի անվանումը">
+</div>
+<div class="form-group">
+<label for="quantity">Քանակ:</label>
+<input type="text" id="quantity" placeholder="Քանակը (գրամ, հատ, etc.)">
+</div>
+<button id="add-btn" class="btn-primary">Ավելացնել ցանկում</button>
+</div>
+
+<div class="card">
+<h2>Բաղադրիչների ցանկ</h2>
+<div id="ingredients-list"></div>
+<div class="export-buttons">
+<button id="export-excel" class="btn-secondary">Экспорт в Excel</button>
+<button id="export-pdf" class="btn-secondary">Экспорт в PDF</button>
+<button id="share-whatsapp" class="btn-accent">Отправить через WhatsApp</button>
+<button id="clear-all" class="btn-danger">Очистить список</button>
+</div>
+</div>
+</div>
+
+<footer>
+<p>© 2023 Խոհանոցի և բարի պաշարների հաշվառման համակարգ</p>
+</footer>
+
+<div class="notification" id="notification"></div>
+
+<!-- Встроенный армянский шрифт (пример) -->
+<script>
+(function(jsPDFAPI){
+jsPDFAPI.addFileToVFS("NotoSansArmenian-normal.ttf","AAEAAAARAQAABAA...");
+jsPDFAPI.addFont("NotoSansArmenian-normal.ttf","NotoSansArmenian","normal");
+})(window.jspdf.API);
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+let ingredients = JSON.parse(localStorage.getItem('ingredients'))||{};
+loadIngredients();
+loadEstablishmentName();
+
+document.getElementById('add-btn').addEventListener('click',addIngredient);
+document.getElementById('export-excel').addEventListener('click',exportToExcel);
+document.getElementById('export-pdf').addEventListener('click',exportToPDF);
+document.getElementById('share-whatsapp').addEventListener('click',shareViaWhatsApp);
+document.getElementById('clear-all').addEventListener('click',clearAllIngredients);
+document.getElementById('establishment').addEventListener('change',saveEstablishmentName);
+
+// ===== ФУНКЦИИ =====
+function addIngredient(){
+let category=document.getElementById('category').value.trim().toLowerCase();
+const name=document.getElementById('ingredient').value.trim();
+const quantity=document.getElementById('quantity').value.trim();
+if(!name){showNotification('Մուտքագրեք բաղադրիչի անվանումը');return;}
+if(!ingredients[category]){ingredients[category]=[];}
+ingredients[category].push({name:name,quantity:quantity||'1'});
+localStorage.setItem('ingredients',JSON.stringify(ingredients));
+displayIngredients();
+document.getElementById('ingredient').value='';
+document.getElementById('quantity').value='';
+showNotification('Բաղադրիչը հաջողությամբ ավելացվեց');
+}
+
+function displayIngredients(){
+const listElement=document.getElementById('ingredients-list');
+listElement.innerHTML='';
+if(Object.keys(ingredients).length===0){
+listElement.innerHTML='<div class="empty-list">Բաղադրիչներ դեռ չեն ավելացվել</div>';
+return;
+}
+for(const category in ingredients){
+if(ingredients[category].length>0){
+const categoryHeader=document.createElement('div');
+categoryHeader.className='category-header';
+categoryHeader.textContent=getCategoryName(category);
+listElement.appendChild(categoryHeader);
+const table=document.createElement('table');
+const thead=document.createElement('thead');
+thead.innerHTML='<tr><th>Անվանում</th><th>Քանակ</th><th>Գործողություններ</th></tr>';
+table.appendChild(thead);
+const tbody=document.createElement('tbody');
+ingredients[category].forEach((item,index)=>{
+const row=document.createElement('tr');
+row.innerHTML=`<td>${item.name}</td><td>${item.quantity}</td><td class="action-buttons"><button class="action-btn btn-danger delete-btn" data-category="${category}" data-index="${index}">Ջնջել</button></td>`;
+tbody.appendChild(row);
+});
+table.appendChild(tbody);
+listElement.appendChild(table);
+}
+}
+document.querySelectorAll('.delete-btn').forEach(button=>{
+button.addEventListener('click',function(){
+const category=this.getAttribute('data-category');
+const index=parseInt(this.getAttribute('data-index'));
+ingredients[category].splice(index,1);
+if(ingredients[category].length===0){delete ingredients[category];}
+localStorage.setItem('ingredients',JSON.stringify(ingredients));
+displayIngredients();
+showNotification('Բաղադրիչը հաջողությամբ ջնջվեց');
+});
+});
+}
+
+function loadIngredients(){ingredients=JSON.parse(localStorage.getItem('ingredients'))||{};displayIngredients();}
+function loadEstablishmentName(){document.getElementById('establishment').value=localStorage.getItem('establishment')||'';}
+function saveEstablishmentName(){localStorage.setItem('establishment',document.getElementById('establishment').value.trim());showNotification('Անվանումը պահպանված է');}
+
+function getCategoryName(key){const names={'միս':'Միս','ծովամթերք':'Ծովամթերք','կիսաֆաբրիկատներ':'Կիսաֆաբրիկատներ','բանջարեղեն/կանաչի':'Բանջարեղեն/Կանաչի','կաթնամթերք/պանիր':'Կաթնամթերք/Պանիր','սոուսներ':'Սոուսներ','համեմունքներ':'Համեմունքներ','կռուպեղեն':'Կռուպեղեն','հացաբուլկեղեն':'Հացաբուլկեղեն','տուփեր/սուոսնիկներ':'Տուփեր/Սուոսնիկներ'};return names[key]||key;}
+
+function exportToExcel(){
+if(Object.keys(ingredients).length===0){showNotification('Ցանկը դատարկ է');return;}
+let data=[['Կատեգորիա','Անվանում','Քանակ']];
+for(const category in ingredients){ingredients[category].forEach(item=>{data.push([getCategoryName(category),item.name,item.quantity]);});}
+const ws=XLSX.utils.aoa_to_sheet(data);
+const wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'Բաղադրիչներ');
+const est=document.getElementById('establishment').value.trim();
+XLSX.writeFile(wb,`${est?est+'_բաղադրիչներ':'բաղադրիչներ'}.xlsx`);
+showNotification('Excel ֆայլը ներբեռնված է');
+}
+
+function exportToPDF(){
+if(Object.keys(ingredients).length===0){showNotification('Ցանկը դատարկ է');return;}
+const {jsPDF}=window.jspdf;
+const doc=new jsPDF();
+doc.setFont('NotoSansArmenian','normal');
+const est=document.getElementById('establishment').value.trim();
+let y=15;if(est){doc.setFontSize(14);doc.text(est,14,y);y+=10;}
+doc.setFontSize(12);doc.text('Բաղադրիչների ցանկ',14,y);y+=6;
+let data=[];
+for(const category in ingredients){ingredients[category].forEach(item=>{data.push([getCategoryName(category),item.name,item.quantity]);});}
+doc.autoTable({head:[['Կատեգորիա','Անվանում','Քանակ']],body:data,startY:y,styles:{font:'NotoSansArmenian',fontSize:10},headStyles:{fillColor:[107,142,35]}});
+doc.save(`${est?est+'_բաղադրիչներ':'բաղադրիչներ'}.pdf`);
+showNotification('PDF ֆայլը ներբեռնված է');
+}
+
+function shareViaWhatsApp(){
+if(Object.keys(ingredients).length===0){showNotification('Ցանկը դատարկ է');return;}
+let est=document.getElementById('establishment').value.trim();
+let msg=est?`${est}%0A`:'';
+msg+='Բաղադրիչների ցանկ:%0A%0A';
+for(const category in ingredients){msg+=`*${getCategoryName(category)}:*%0A`;ingredients[category].forEach(item=>{msg+=`- ${item.name}: ${item.quantity}%0A`;});msg+='%0A';}
+window.open(`https://wa.me/?text=${msg}`,'_blank');showNotification('WhatsApp-ով ուղարկումը պատրաստ է');}
+
+function clearAllIngredients(){
+if(Object.keys(ingredients).length===0){showNotification('Ցանկը արդեն դատարկ է');return;}
+if(confirm('Դուք համոզված եք, որ ցանկանում եք ջնջել բոլոր բաղադրիչները?')){
+ingredients={};localStorage.setItem('ingredients',JSON.stringify(ingredients));displayIngredients();showNotification('Բոլոր բաղադրիչները ջնջված են');}
+}
+
+function showNotification(msg){
+const notif=document.getElementById('notification');notif.textContent=msg;notif.classList.add('show');
+setTimeout(()=>{notif.classList.remove('show');},2000);
+}
+
+});
+</script>
+
+</body>
+</html>
